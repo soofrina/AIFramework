@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Literacy Academy: Defeat the Villain</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #1e1b4b, #020617 65%);
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 18px;
+      overflow-x: hidden;
+    }
+
+    .game-container {
+      max-width: 1250px;
+      margin: 0 auto;
+      padding-bottom: 40px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      color: #f97316;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .header p {
+      font-size: 1rem;
+      color: #fed7aa;
+      max-width: 900px;
+      margin: 10px auto 0;
+      line-height: 1.45;
+    }
+
+    .score-panel {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .score-box {
+      background: #ffffff;
+      color: #111827;
+      border-radius: 14px;
+      padding: 10px 16px;
+      font-weight: bold;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .hero-bank, .battlefield {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      color: #fdba74;
+      font-size: 1.15rem;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .hero-card {
+      background: #ffffff;
+      color: #111827;
+      border-radius: 16px;
+      padding: 8px;
+      cursor: grab;
+      border: 3px solid transparent;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      user-select: none;
+    }
+
+    .hero-card:active { cursor: grabbing; }
+
+    .hero-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.38);
+    }
+
+    .card-image {
+      width: 100%;
+      height: 145px;
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e5e7eb, #9ca3af);
+      display: block;
+    }
+
+    .hero-name {
+      margin-top: 7px;
+      font-weight: bold;
+      font-size: 0.84rem;
+      text-align: center;
+    }
+
+    .battle-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .villain-zone {
+      background: rgba(255,255,255,0.1);
+      border: 2px dashed rgba(255,255,255,0.35);
+      border-radius: 20px;
+      padding: 12px;
+      transition: background 0.2s, border 0.2s, transform 0.2s;
+      min-height: 0;
+    }
+
+    .villain-zone.drag-over {
+      background: rgba(249,115,22,0.18);
+      border-color: #fb923c;
+      transform: scale(1.01);
+    }
+
+    .villain-card {
+      background: #111827;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+    }
+
+    .villain-card img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      background: linear-gradient(135deg, #7f1d1d, #111827);
+    }
+
+    .villain-info {
+      padding: 10px;
+    }
+
+    .villain-info h3 {
+      margin: 0;
+      color: #fed7aa;
+      font-size: 0.95rem;
+    }
+
+    .villain-info p {
+      margin: 5px 0 0;
+      color: #e5e7eb;
+      font-size: 0.78rem;
+      line-height: 1.3;
+    }
+
+    .drop-slot {
+      margin-top: 10px;
+      min-height: 78px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.24);
+      display: grid;
+      align-items: center;
+      padding: 7px;
+    }
+
+    .drop-slot::before {
+      content: "Drop hero here";
+      color: rgba(255,255,255,0.58);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    .drop-slot:has(.hero-card)::before {
+      content: "";
+      display: none;
+    }
+
+    .villain-zone .hero-card {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 7px;
+    }
+
+    .villain-zone .hero-card .card-image {
+      width: 54px;
+      height: 72px;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    .villain-zone .hero-name {
+      text-align: left;
+      margin-top: 0;
+      font-size: 0.82rem;
+    }
+
+    .strategy-reveal {
+      display: none;
+      margin-top: 9px;
+      background: rgba(34,197,94,0.14);
+      border: 1px solid rgba(34,197,94,0.45);
+      color: #bbf7d0;
+      padding: 9px;
+      border-radius: 13px;
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .correct { border-color: #22c55e !important; }
+    .incorrect { border-color: #ef4444 !important; }
+
+    .controls {
+      position: relative;
+      z-index: 5;
+      clear: both;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+      padding-top: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    button:hover { transform: translateY(-2px); }
+
+    .check-btn { background: #f97316; color: #111827; }
+    .reset-btn { background: #ffffff; color: #111827; }
+    .hint-btn { background: #fdba74; color: #111827; }
+
+    .feedback {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      min-height: 30px;
+    }
+
+    .badge {
+      display: none;
+      margin: 20px auto 0;
+      max-width: 520px;
+      background: linear-gradient(135deg, #f97316, #facc15);
+      color: #111827;
+      border-radius: 24px;
+      padding: 20px;
+      text-align: center;
+      font-weight: bold;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    }
+
+    .hint-box {
+      display: none;
+      margin: 18px auto 0;
+      max-width: 900px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 14px 18px;
+      color: #fed7aa;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 1180px) {
+      .battle-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 980px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .battle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      .battle-grid { grid-template-columns: 1fr; }
+      .hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      body { padding: 12px; }
+      .hero-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <header class="header">
+      <h1>Defeat the Villain</h1>
+      <p><strong>Game 3: AI Risk Battle.</strong> Drag the correct superhero picture card onto each villain. When you get it right, the defeat strategy will be revealed.</p>
+    </header>
+
+    <div class="score-panel">
+      <div class="score-box">Score: <span id="score">0</span> / 8</div>
+      <div class="score-box">Heroes Placed: <span id="placedCount">0</span> / 8</div>
+    </div>
+
+    <main class="main-grid">
+      <section class="hero-bank">
+        <h2 class="section-title">Superhero Picture Cards</h2>
+        <div id="heroBank" class="hero-grid">
+          <div class="hero-card" draggable="true" data-hero="fact-checker">
+            <img class="card-image" src="superheroes/Fact Checker_Hallucina.png" alt="Fact Checker superhero card">
+            <div class="hero-name">Fact Checker</div>
+          </div>
+          <div class="hero-card" draggable="true" data-hero="compass-core">
+            <img class="card-image" src="superheroes/Compass Core.png" alt="Compass Core superhero card">
+            <div class="hero-name">Compass Core</div>
+          </div>
+          <div class="hero-card" draggable="true" data-hero="thinkforge">
+            <img class="card-image" src="superheroes/think forge.png" alt="ThinkForge superhero card">
+            <div class="hero-name">ThinkForge</div>
+          </div>
+          <div class="hero-card" draggable="true" data-hero="privacy-shield">
+            <img class="card-image" src="superheroes/Privacy Shield.png" alt="Privacy Shield superhero card">
+            <div class="hero-name">Privacy Shield</div>
+          </div>
+          <div class="hero-card" draggable="true" data-hero="focus-guardian">
+            <img class="card-image" src="superheroes/Focus Guardian.png" alt="Focus Guardian superhero card">
+            <div class="hero-name">Focus Guardian</div>
+          </div>
+          <div class="hero-card" draggable="true" data-hero="ethics-sentinel">
+            <img class="card-image" src="superheroes/Ethics Sentinel.png" alt="Ethics Sentinel superhero card">
+            <div class="hero-name">Ethics Sentinel</div>
+          </div>
+          <div class="hero-card" draggable="true" data-hero="clarity-keeper">
+            <img class="card-image" src="superheroes/Clarity Keeper.png" alt="Clarity Keeper superhero card">
+            <div class="hero-name">Clarity Keeper</div>
+          </div>
+          <div class="hero-card" draggable="true" data-hero="analog-ace">
+            <img class="card-image" src="superheroes/Analog Ace.png" alt="Analog Ace superhero card">
+            <div class="hero-name">Analog Ace</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="battlefield">
+        <h2 class="section-title">Villain Battle Arena</h2>
+        <div class="battle-grid">
+          <div class="villain-zone" data-answer="fact-checker">
+            <div class="villain-card">
+              <img src="villains/Risk 1 - Hallucination.png" alt="Hallucina the Fabricator villain card">
+              <div class="villain-info"><h3>Hallucina</h3><p>Creates confident but false information.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: Verify. Cross-check. Don’t just believe.</div>
+          </div>
+
+          <div class="villain-zone" data-answer="compass-core">
+            <div class="villain-card">
+              <img src="villains/Risk 2 - Unsafe Content.png" alt="Chaos Prompter villain card">
+              <div class="villain-info"><h3>Chaos Prompter</h3><p>Turns AI use into unsafe or unsuitable directions.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: Stay focused. Stay purposeful.</div>
+          </div>
+
+          <div class="villain-zone" data-answer="thinkforge">
+            <div class="villain-card">
+              <img src="villains/Risk 3 - Think Less LazyBot.png" alt="Lazybot 3000 villain card">
+              <div class="villain-info"><h3>Lazybot 3000</h3><p>Encourages users to skip thinking.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: Think first. Be AI second.</div>
+          </div>
+
+          <div class="villain-zone" data-answer="privacy-shield">
+            <div class="villain-card">
+              <img src="villains/Risk 4 - Data Leech.png" alt="Data Leech villain card">
+              <div class="villain-info"><h3>Data Leech</h3><p>Feeds on personal and confidential information.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: Guard your data. Protect yourself.</div>
+          </div>
+
+          <div class="villain-zone" data-answer="focus-guardian">
+            <div class="villain-card">
+              <img src="villains/Risk 5 - Wandermind.png" alt="WanderMind villain card">
+              <div class="villain-info"><h3>WanderMind</h3><p>Pulls users into off-task AI exploration.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: Stay on track. Finish the mission.</div>
+          </div>
+
+          <div class="villain-zone" data-answer="ethics-sentinel">
+            <div class="villain-card">
+              <img src="villains/Risk 6 - Bias Hydra.png" alt="Bias Hydra villain card">
+              <div class="villain-info"><h3>Bias Hydra</h3><p>Produces one-sided or unfair outputs.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: See all sides. Question the story.</div>
+          </div>
+
+          <div class="villain-zone" data-answer="clarity-keeper">
+            <div class="villain-card">
+              <img src="villains/Risk 7 - Echo Illusionist.png" alt="Echo Illusionist villain card">
+              <div class="villain-info"><h3>Echo Illusionist</h3><p>Makes confusing explanations sound authoritative.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: Make meaning clear. Don’t assume.</div>
+          </div>
+
+          <div class="villain-zone" data-answer="analog-ace">
+            <div class="villain-card">
+              <img src="villains/Risk 8 - BlackoutBoss.png" alt="Blackout Boss villain card">
+              <div class="villain-info"><h3>Blackout Boss</h3><p>Strikes when people rely too much on external systems.</p></div>
+            </div>
+            <div class="drop-slot"></div>
+            <div class="strategy-reveal">Defeat Strategy: Be ready without AI. Always have a plan.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="controls">
+      <button class="check-btn" onclick="checkAnswers()">Check Battle Score</button>
+      <button class="hint-btn" onclick="toggleHint()">Show / Hide Hint</button>
+      <button class="reset-btn" onclick="resetGame()">Reset Battle</button>
+    </div>
+
+    <div id="hintBox" class="hint-box">
+      Tip: Think about what each villain attacks. A false-information villain needs verification. A privacy villain needs protection. A system-dependency villain needs offline resilience.
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <div id="badge" class="badge">🏆 AI Literacy Guardian Badge Unlocked! You defeated all 8 AI risk villains.</div>
+  </div>
+
+  <script>
+    const heroBank = document.getElementById('heroBank');
+    const scoreEl = document.getElementById('score');
+    const placedCountEl = document.getElementById('placedCount');
+    const feedbackEl = document.getElementById('feedback');
+    const badgeEl = document.getElementById('badge');
+    const hintBox = document.getElementById('hintBox');
+    let draggedCard = null;
+
+    function addDragEvents(card) {
+      card.addEventListener('dragstart', () => {
+        draggedCard = card;
+        setTimeout(() => card.style.opacity = '0.4', 0);
+      });
+      card.addEventListener('dragend', () => {
+        draggedCard = null;
+        card.style.opacity = '1';
+      });
+    }
+
+    document.querySelectorAll('.hero-card').forEach(addDragEvents);
+
+    document.querySelectorAll('.villain-zone').forEach(zone => {
+      zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+      });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        if (draggedCard) {
+          const slot = zone.querySelector('.drop-slot');
+          if (slot.querySelector('.hero-card')) {
+            heroBank.appendChild(slot.querySelector('.hero-card'));
+          }
+          slot.appendChild(draggedCard);
+          draggedCard.classList.remove('correct', 'incorrect');
+          zone.querySelector('.strategy-reveal').style.display = 'none';
+          updatePlacedCount();
+          feedbackEl.textContent = '';
+          badgeEl.style.display = 'none';
+        }
+      });
+    });
+
+    heroBank.addEventListener('dragover', e => e.preventDefault());
+    heroBank.addEventListener('drop', e => {
+      e.preventDefault();
+      if (draggedCard) {
+        heroBank.appendChild(draggedCard);
+        draggedCard.classList.remove('correct', 'incorrect');
+        updatePlacedCount();
+        feedbackEl.textContent = '';
+        badgeEl.style.display = 'none';
+      }
+    });
+
+    function updatePlacedCount() {
+      placedCountEl.textContent = document.querySelectorAll('.villain-zone .hero-card').length;
+    }
+
+    function checkAnswers() {
+      let score = 0;
+      const placedCards = document.querySelectorAll('.villain-zone .hero-card');
+      document.querySelectorAll('.hero-card').forEach(card => card.classList.remove('correct', 'incorrect'));
+      document.querySelectorAll('.strategy-reveal').forEach(strategy => strategy.style.display = 'none');
+
+      document.querySelectorAll('.villain-zone').forEach(zone => {
+        const card = zone.querySelector('.hero-card');
+        if (!card) return;
+        if (zone.dataset.answer === card.dataset.hero) {
+          score++;
+          card.classList.add('correct');
+          zone.querySelector('.strategy-reveal').style.display = 'block';
+        } else {
+          card.classList.add('incorrect');
+        }
+      });
+
+      scoreEl.textContent = score;
+      if (placedCards.length < 8) {
+        feedbackEl.textContent = 'Place all 8 superhero cards before finalising your battle score.';
+        feedbackEl.style.color = '#fdba74';
+        badgeEl.style.display = 'none';
+      } else if (score === 8) {
+        feedbackEl.textContent = 'Victory! You defeated every villain with the correct AI literacy superhero.';
+        feedbackEl.style.color = '#22c55e';
+        badgeEl.style.display = 'block';
+      } else {
+        feedbackEl.textContent = `You scored ${score}/8. Review the red cards and try again.`;
+        feedbackEl.style.color = '#f87171';
+        badgeEl.style.display = 'none';
+      }
+    }
+
+    function resetGame() {
+      document.querySelectorAll('.hero-card').forEach(card => {
+        card.classList.remove('correct', 'incorrect');
+        heroBank.appendChild(card);
+      });
+      document.querySelectorAll('.strategy-reveal').forEach(strategy => strategy.style.display = 'none');
+      scoreEl.textContent = '0';
+      placedCountEl.textContent = '0';
+      feedbackEl.textContent = '';
+      badgeEl.style.display = 'none';
+      hintBox.style.display = 'none';
+    }
+
+    function toggleHint() {
+      hintBox.style.display = hintBox.style.display === 'block' ? 'none' : 'block';
+    }
+  </script>
+</body>
+</html>
